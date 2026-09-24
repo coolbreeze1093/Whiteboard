@@ -1,0 +1,53 @@
+# Build output
+out/
+
+# MSVC / Visual Studio
+.vs/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.opendb
+*.vcxproj.user
+*.vcxproj.filters
+
+# Compiled output
+*.exe
+*.dll
+*.lib
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+*.res
+*.tlog
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake.in
+
+# Qt MOC / UIC generated
+moc_*.cpp
+ui_*.h
+*_autogen/
+
+# IDE
+.idea/
+.vscode/
+*.pro.user
+*.swp
+*.swo
+*~
+
+# Archive / temp files
+*.zip
+*.rar
+*.7z
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
