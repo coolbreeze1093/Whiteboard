@@ -17,7 +17,8 @@ WhiteboardView::WhiteboardView(const QSize &canvasSize, QWidget *parent)
 {
     auto *newScene = new QGraphicsScene(this);
     newScene->setSceneRect(0, 0, canvasSize.width(), canvasSize.height());
-    newScene->setBackgroundBrush(Qt::white);
+    newScene->setBackgroundBrush(
+        QColor(255, 255, 255, 1));
     setScene(newScene);
 
     m_undoStack = new QUndoStack(this);
@@ -28,13 +29,24 @@ WhiteboardView::WhiteboardView(const QSize &canvasSize, QWidget *parent)
     setFocusPolicy(Qt::StrongFocus); // 需要能收到键盘事件（Delete 删除文字）
     // 不做任何缩放变换，方便鼠标位置和场景坐标一一对应
     setTransform(QTransform());
+
+     this->setStyleSheet(
+        "QGraphicsView {"
+        "    background: transparent;"
+        "    border: none;"
+        "}");
+
+    setAttribute(Qt::WA_TransparentForMouseEvents, false);
+    viewport()->setAttribute(Qt::WA_TransparentForMouseEvents, false);
+
+    /*setWindowOpacity(0.5); */
+
+    // this->setAttribute(Qt::WA_TranslucentBackground);
 }
 
 WhiteboardView::~WhiteboardView()
 {
     m_undoStack->clear();
-    delete m_undoStack;
-    m_undoStack = nullptr;
 }
 
 QPointF WhiteboardView::clampToScene(const QPointF &pos) const
@@ -47,18 +59,21 @@ QPointF WhiteboardView::clampToScene(const QPointF &pos) const
 
 void WhiteboardView::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() != Qt::LeftButton) {
+    if (event->button() != Qt::LeftButton)
+    {
         QGraphicsView::mousePressEvent(event);
         return;
     }
 
     QPointF scenePos = clampToScene(mapToScene(event->pos()));
 
-    if (m_tool == Tool::Text) {
+    if (m_tool == Tool::Text)
+    {
         // 文字工具下先看看点到的是不是已有对象：点中了就转发给默认
         // 实现，让 MovableTextItem 自己处理拖动；点在空白处才新建。
         QGraphicsItem *hit = itemAt(event->pos());
-        if (hit) {
+        if (hit)
+        {
             m_forwardingToScene = true;
             QGraphicsView::mousePressEvent(event);
             return;
@@ -67,7 +82,8 @@ void WhiteboardView::mousePressEvent(QMouseEvent *event)
         return;
     }
 
-    if (m_tool == Tool::Eraser) {
+    if (m_tool == Tool::Eraser)
+    {
         m_erasing = true;
         eraseAt(scenePos);
         return;
@@ -78,18 +94,21 @@ void WhiteboardView::mousePressEvent(QMouseEvent *event)
 
 void WhiteboardView::mouseMoveEvent(QMouseEvent *event)
 {
-    if (m_forwardingToScene) {
+    if (m_forwardingToScene)
+    {
         QGraphicsView::mouseMoveEvent(event);
         return;
     }
 
     QPointF scenePos = clampToScene(mapToScene(event->pos()));
 
-    if (m_erasing) {
+    if (m_erasing)
+    {
         eraseAt(scenePos);
         return;
     }
-    if (m_stroking) {
+    if (m_stroking)
+    {
         continueStroke(scenePos);
         return;
     }
@@ -98,23 +117,27 @@ void WhiteboardView::mouseMoveEvent(QMouseEvent *event)
 
 void WhiteboardView::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (m_forwardingToScene) {
+    if (m_forwardingToScene)
+    {
         QGraphicsView::mouseReleaseEvent(event);
         if (event->button() == Qt::LeftButton)
             m_forwardingToScene = false;
         return;
     }
 
-    if (event->button() == Qt::LeftButton && m_erasing) {
+    if (event->button() == Qt::LeftButton && m_erasing)
+    {
         m_erasing = false;
-        if (m_erasingMacroOpen) {
+        if (m_erasingMacroOpen)
+        {
             m_undoStack->endMacro();
             m_erasingMacroOpen = false;
         }
         return;
     }
 
-    if (event->button() == Qt::LeftButton && m_stroking) {
+    if (event->button() == Qt::LeftButton && m_stroking)
+    {
         endStroke();
         return;
     }
@@ -124,8 +147,10 @@ void WhiteboardView::mouseReleaseEvent(QMouseEvent *event)
 
 void WhiteboardView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (m_tool == Tool::Text) {
-        if (auto *textItem = qgraphicsitem_cast<MovableTextItem *>(itemAt(event->pos()))) {
+    if (m_tool == Tool::Text)
+    {
+        if (auto *textItem = qgraphicsitem_cast<MovableTextItem *>(itemAt(event->pos())))
+        {
             bool ok = false;
             QString newText = QInputDialog::getMultiLineText(
                 this, tr(u8"编辑文字"), tr(u8"文字内容："), textItem->text(), &ok);
@@ -139,9 +164,11 @@ void WhiteboardView::mouseDoubleClickEvent(QMouseEvent *event)
 
 void WhiteboardView::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
+    if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace)
+    {
         const auto selected = scene()->selectedItems();
-        if (!selected.isEmpty()) {
+        if (!selected.isEmpty())
+        {
             m_undoStack->beginMacro(tr(u8"删除选中对象"));
             for (QGraphicsItem *item : selected)
                 m_undoStack->push(new RemoveObjectCommand(scene(), item, tr(u8"删除对象")));
@@ -194,8 +221,10 @@ void WhiteboardView::eraseAt(const QPointF &scenePos)
     hitArea.addEllipse(scenePos, m_eraserWidth / 2.0, m_eraserWidth / 2.0);
 
     const auto hits = scene()->items(hitArea, Qt::IntersectsItemShape);
-    for (QGraphicsItem *item : hits) {
-        if (!m_erasingMacroOpen) {
+    for (QGraphicsItem *item : hits)
+    {
+        if (!m_erasingMacroOpen)
+        {
             // 只有真的命中了东西才开始打包撤销宏，避免空点一下也占一条撤销记录
             m_undoStack->beginMacro(tr(u8"橡皮擦"));
             m_erasingMacroOpen = true;

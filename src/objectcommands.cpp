@@ -39,8 +39,8 @@ RemoveObjectCommand::RemoveObjectCommand(QGraphicsScene *scene, QGraphicsItem *i
 
 RemoveObjectCommand::~RemoveObjectCommand()
 {
-    if (!m_item->scene())
-        delete m_item;
+    /* if (!m_item->scene())
+        delete m_item; */
 }
 
 void RemoveObjectCommand::undo()

@@ -16,6 +16,7 @@ public:
     enum class Tool { Pen, Eraser, Text };
 
     explicit WhiteboardView(const QSize &canvasSize, QWidget *parent = nullptr);
+    void close();
     ~WhiteboardView();
 
     QUndoStack *undoStack() const { return m_undoStack; }

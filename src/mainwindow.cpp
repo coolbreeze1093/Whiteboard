@@ -17,9 +17,10 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+
     m_view = new WhiteboardView(QSize(1600, 1000), this);
     setCentralWidget(m_view);
-    resize(1100, 750);
+    resize(1650, 1050);
     setWindowTitle(tr(u8"白板 (Qt5 QGraphicsView 对象存储白板)"));
 
     setupToolBar();
@@ -83,11 +84,36 @@ void MainWindow::setupToolBar()
     connect(undoAction, &QAction::triggered, m_view->undoStack(), &QUndoStack::undo);
 
     QAction *clearAction = toolBar->addAction(tr(u8"清空"));
-    connect(clearAction, &QAction::triggered, this, [this]() {
+    connect(clearAction, &QAction::triggered, this, [this]()
+            {
         auto btn = QMessageBox::question(this, tr(u8"清空画布"), tr(u8"确定要清空整个白板吗？（此操作可撤销）"));
         if (btn == QMessageBox::Yes)
-            m_view->clearCanvas();
-    });
+            m_view->clearCanvas(); });
+
+    QAction *saveAction = toolBar->addAction(tr(u8"保存"));
+    connect(saveAction, &QAction::triggered, this, [this]()
+            {
+                QImage image(m_view->viewport()->size(),
+                             QImage::Format_ARGB32);
+
+                image.fill(Qt::transparent);
+
+                QPainter painter(&image);
+                m_view->render(&painter);
+                painter.end();
+                image.save("whiteboard.png");
+            });
+
+    QAction *closeAction = toolBar->addAction(tr(u8"关闭"));
+    connect(closeAction, &QAction::triggered, this, [this]()
+            {
+        MainWindow::close(); });
+
+    toolBar->setStyleSheet(
+        "QToolBar {"
+        "    background-color: #FFFFFF;"
+        "    border: none;"
+        "}");
 
     // 初始化默认工具与默认粗细
     onToolChanged(m_penAction);
